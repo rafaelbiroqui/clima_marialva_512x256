@@ -136,7 +136,7 @@ function tColor(t){ if(t>=33)return"#FF3B30"; if(t>=28)return"#FF7A00"; if(t>=22
 var DOW=["DOM","SEG","TER","QUA","QUI","SEX","SÁB"];
 function pad(n){return(n<10?"0":"")+n}
 function nowBR(){var d=new Date();try{var p=new Intl.DateTimeFormat("en-US",{timeZone:CFG.tz,hour12:false,hour:"2-digit",minute:"2-digit"}).formatToParts(d),o={};for(var i=0;i<p.length;i++)o[p[i].type]=p[i].value;return{h:parseInt(o.hour,10)%24,m:parseInt(o.minute,10)}}catch(e){var u=new Date(d.getTime()+(d.getTimezoneOffset()-180)*6e4);return{h:u.getHours(),m:u.getMinutes()}}}
-function dow(iso,i){if(i===1)return"AMANHÃ";var a=iso.split("-");return DOW[new Date(Date.UTC(+a[0],+a[1]-1,+a[2])).getUTCDay()]}
+function dow(iso,i){if(i===1)return"AMANHÃ";if(!iso)return"--";var a=iso.split("-");return DOW[new Date(Date.UTC(+a[0],+a[1]-1,+a[2])).getUTCDay()]}
 function clockHTML(){var n=nowBR();return pad(n.h)+'<span class="blink">:</span>'+pad(n.m)}
 function bar(title){return '<div class="bar" style="background:'+CFG.brand+'"><div class="city">'+title+'</div><div class="clk">'+clockHTML()+'</div></div>'}
 
@@ -163,7 +163,7 @@ function drawDays(){
        '<div class="rain">'+Math.round(d.precipitation_probability_max[i]||0)+'%</div></div>';}
   v.innerHTML=bar("PREVISÃO")+'<div class="cols">'+h+'</div>';
 }
-function drawAll(){drawNow();drawDays();fit()}
+function drawAll(){try{drawNow();drawDays();fit()}catch(e){if(window.console)console.log("Erro ao desenhar:",e)}}
 
 /* encolhe só o que não couber (ex.: nome de cidade longo) */
 function fit(){var e=document.querySelectorAll(".city,.now-cond,.now-temp,.sp-name,.sp-line,.strip-name");
@@ -191,16 +191,18 @@ function scale(){var vw=innerWidth||document.documentElement.clientWidth,vh=inne
 function url(){return"https://api.open-meteo.com/v1/forecast?latitude="+CFG.lat+"&longitude="+CFG.lon+
   "&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"+
   "&timezone=America%2FSao_Paulo&forecast_days=5&_="+Date.now()}
-var KEY="clima_"+CFG.lat+"_"+CFG.lon;
+var KEY="clima512_"+CFG.lat+"_"+CFG.lon; /* chave própria: não reaproveita o cache da versão 384x256 (mesmo domínio) */
 function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
-function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function load(){try{var o=JSON.parse(localStorage.getItem(KEY));return ok(o)?o:null}catch(e){return null}}
+/* só aceita dados com dias suficientes para a previsão */
+function ok(o){return !!(o&&o.current&&o.daily&&o.daily.time&&o.daily.time.length>CFG.days)}
 function demo(){var t=[],d=new Date();for(var i=0;i<5;i++){var x=new Date(d.getTime()+i*864e5);t.push(x.getFullYear()+"-"+pad(x.getMonth()+1)+"-"+pad(x.getDate()))}
   return{current:{temperature_2m:29.4,weather_code:2,is_day:1},daily:{time:t,weather_code:[2,61,95,0,3],temperature_2m_max:[31,27,24,29,30],temperature_2m_min:[19,18,17,16,18],precipitation_probability_max:[10,80,95,0,20]}}}
 var tries=0;
 function update(){
   if(CFG.demo){DATA=demo();drawAll();return}
   var x=new XMLHttpRequest();x.open("GET",url(),true);x.timeout=15000;
-  x.onload=function(){if(x.status===200){try{DATA=JSON.parse(x.responseText);save(DATA);tries=0;document.getElementById("stale").style.display="none";drawAll();return}catch(e){}}fail()};
+  x.onload=function(){if(x.status===200){try{var j=JSON.parse(x.responseText);if(!ok(j))throw 0;DATA=j;save(DATA);tries=0;document.getElementById("stale").style.display="none";drawAll();return}catch(e){}}fail()};
   x.onerror=x.ontimeout=fail;x.send();
 }
 function fail(){if(!DATA){DATA=load();if(DATA)drawAll()}document.getElementById("stale").style.display="block";
@@ -215,3 +217,4 @@ setTimeout(function(){location.reload()},6*3600*1000);
 </script>
 </body>
 </html>
+
