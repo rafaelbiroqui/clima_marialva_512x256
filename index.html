@@ -85,7 +85,7 @@ body{font-family:"BC","Roboto Condensed","Arial Narrow",Arial,sans-serif;font-we
 function param(k,d){var m=new RegExp("[?&]"+k+"=([^&#]*)").exec(location.search);if(!m)return d;try{return decodeURIComponent(m[1].replace(/\+/g," "))}catch(e){return m[1]}}
 var CFG={
   city:param("city","MARIALVA"), lat:param("lat","-23.485"), lon:param("lon","-51.792"),
-  views:param("views","now,days").split(","), t:param("t","8,8").split(","), days:(param("days","4")==="3"?3:4),
+  views:param("views","now,days").split(","), t:param("t","6,6").split(","), days:(param("days","4")==="3"?3:4),
   brand:"#"+param("brand","0066FF"),
   demo:param("demo","0")==="1", tz:"America/Sao_Paulo"
 };
